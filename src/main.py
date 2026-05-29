@@ -16,7 +16,8 @@ SEQUENCE_LENGTH = 40
 STEP_SIZE = 3
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-MODEL_PATH = PROJECT_ROOT / "shakespeare_model.keras"
+MODEL_DIR = PROJECT_ROOT / "models"
+MODEL_PATH = MODEL_DIR / "shakespeare_model.keras"
 
 LEARNING_RATE = float(os.environ.get("LEARNING_RATE", "0.01"))
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "128"))
@@ -47,10 +48,11 @@ def vectorize(
     next_chars: list[str] = []
 
     for i in range(0, len(text) - SEQUENCE_LENGTH, STEP_SIZE):
-        sentences.append(text[i : i + SEQUENCE_LENGTH])
+        sentences.append(text[i: i + SEQUENCE_LENGTH])
         next_chars.append(text[i + SEQUENCE_LENGTH])
 
-    x = np.zeros((len(sentences), SEQUENCE_LENGTH, len(characters)), dtype=bool)
+    x = np.zeros((len(sentences), SEQUENCE_LENGTH,
+                 len(characters)), dtype=bool)
     y = np.zeros((len(sentences), len(characters)), dtype=bool)
 
     for i, sentence in enumerate(sentences):
@@ -84,6 +86,7 @@ def ensure_model(
     char_to_index: dict[str, int],
 ) -> tf.keras.Model:
     if not MODEL_PATH.exists():
+        MODEL_DIR.mkdir(parents=True, exist_ok=True)
         with st.spinner(
             f"Training model (first run, {TRAIN_EPOCHS} epochs)… This may take a while."
         ):
@@ -117,7 +120,7 @@ def generate_text(
     temperature: float,
 ) -> tuple[str, str]:
     start_index = random.randint(0, len(text) - SEQUENCE_LENGTH - 1)
-    seed = text[start_index : start_index + SEQUENCE_LENGTH]
+    seed = text[start_index: start_index + SEQUENCE_LENGTH]
 
     generated = seed
     sentence = seed
@@ -140,6 +143,9 @@ def generate_text(
 def main() -> None:
     st.set_page_config(page_title="RNN Poetic Text", layout="centered")
     st.title("RNN Poetic Text Generator")
+
+    if st.button("How RNN Works"):
+        st.switch_page("pages/how_rnn_works.py")
 
     temperature_str = st.text_input("Temperature", value="0.5")
     length_str = st.text_input("Length output", value="400")
